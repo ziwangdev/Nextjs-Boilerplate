@@ -22,8 +22,24 @@ export default async function ServerAction() {
     }
 
     return (
-        <form action={addTodo}>
-            <input name="title" />
-        </form>
+        <div className="flex flex-row justify-between w-2/5 items-center">
+            <div>
+                <input
+                    type="checkbox"
+                    checked={false}
+                    className="checkbox checkbox-info"
+                />
+            </div>
+            <div className="w-4/5 px-2">
+                <input
+                    type="text"
+                    placeholder="Type here"
+                    className="input w-full"
+                />
+            </div>
+            <div>
+                <button className="btn btn-info">Delete</button>
+            </div>
+        </div>
     )
 }
