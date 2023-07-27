@@ -1,31 +1,53 @@
 'use client'
 
 import { Todo } from '@/types/Todo'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type TodoItemProps = {
     todo: Todo
+    onDelete: (id: string) => Promise<void>
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo }) => {
-    console.log(todo)
-    const router = useRouter()
+const TodoItem: React.FC<TodoItemProps> = ({ todo, onDelete }) => {
     const [title, setTitle] = useState(todo.title)
     const [userInputTitle, setUserInputTitle] = useState(todo.title)
     const [isComplete, setIsComplete] = useState(todo.is_complete)
+    const inputRef = useRef(null)
 
-    const handleTitleChange = async (
+    const handleInputEnterKeyDown = async (
         event: React.KeyboardEvent<HTMLInputElement>,
     ) => {
         if (event.key === 'Enter') {
+            handleTitleChange()
+        }
+    }
+
+    const handleTitleChange = async () => {
+        // Set input to blur
+        if (inputRef) {
+            inputRef.current.blur()
+        }
+        // Only when title has changed, submit title change to DB
+
+        if (userInputTitle !== title) {
             const res = await updateTodoDB(
                 todo.id as string,
                 isComplete as boolean,
                 userInputTitle as string,
             )
-            setTitle(res.title)
+            setTitle(res[0].title)
         }
+    }
+
+    useEffect(() => {
+        // setTitle(userInputTitle)
+    }, [userInputTitle])
+
+    const handleDeleteButtonClicked = async () => {
+        // Delete Todo in database
+        deleteTodoDB()
+        // Callback to parent to delete todo on client side
+        onDelete(todo.id as string)
     }
 
     const handleIsCompleteChange = async () => {
@@ -34,7 +56,32 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo }) => {
             !isComplete as boolean,
             title as string,
         )
-        setIsComplete(res.is_complete)
+        setIsComplete(res[0].is_complete)
+    }
+
+    const deleteTodoDB = async () => {
+        try {
+            const data = {
+                id: todo.id,
+            }
+
+            const res = await fetch(`/api/todo`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+
+            if (!res.ok) {
+                throw new Error('Failed to delete todo')
+            }
+        } catch (error) {
+            console.error(
+                'Error updating todo isComplete:',
+                (error as Error).message,
+            )
+        }
     }
 
     const updateTodoDB = async (
@@ -48,7 +95,6 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo }) => {
                 is_complete: isComplete,
                 title: title,
             }
-
             const res = await fetch(`/api/todo`, {
                 method: 'PUT',
                 headers: {
@@ -72,27 +118,36 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo }) => {
     }
 
     return (
-        <div className="flex flex-row justify-between w-full items-center py-2">
+        <div className="flex flex-row justify-between w-full items-center py-2 ">
+            {/* Checkbox */}
             <div>
                 <input
                     type="checkbox"
                     checked={isComplete as boolean}
-                    className="checkbox checkbox-info"
-                    onClick={handleIsCompleteChange}
+                    className="checkbox checkbox-primary"
+                    onChange={handleIsCompleteChange}
                 />
             </div>
+            {/* Todo Title */}
             <div className="w-4/5 px-2">
                 <input
                     type="text"
-                    placeholder="Type here"
                     className="input w-full"
+                    ref={inputRef}
                     value={userInputTitle as string}
                     onChange={(event) => setUserInputTitle(event.target.value)}
-                    onKeyDown={(event) => handleTitleChange(event)}
+                    onKeyDown={(event) => handleInputEnterKeyDown(event)}
+                    onBlur={handleTitleChange}
                 />
             </div>
+            {/* Delete Button */}
             <div>
-                <button className="btn btn-info">Delete</button>
+                <button
+                    className="btn btn-primary"
+                    onClick={handleDeleteButtonClicked}
+                >
+                    Delete
+                </button>
             </div>
         </div>
     )

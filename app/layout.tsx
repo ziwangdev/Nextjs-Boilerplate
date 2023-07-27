@@ -1,3 +1,7 @@
+'use client'
+import NavBar from '@/components/NavBar'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useEffect, useState } from 'react'
 import './globals.css'
 
 export const metadata = {
@@ -10,10 +14,39 @@ export default function RootLayout({
 }: {
     children: React.ReactNode
 }) {
+    // Create a Supabase client configured to use cookies
+    const supabase = createClientComponentClient()
+    const [userEmail, setUserEmail] = useState('')
+
+    const getSupabaseUser = async () => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
+        console.log(user.email)
+        if (user) {
+            console.log('here')
+            setUserEmail(user.email as string)
+        }
+    }
+
+    const handleUserSignOut = async () => {
+        setUserEmail('')
+    }
+
+    useEffect(() => {
+        getSupabaseUser()
+        console.log(userEmail)
+    }, [])
+
     return (
         <html lang="en">
             <body>
                 <main className="min-h-screen bg-background flex flex-col items-center">
+                    <NavBar
+                        userEmail={userEmail}
+                        onSignOut={handleUserSignOut}
+                    />
+                    {/* children must be here, do not remove! */}
                     {children}
                 </main>
             </body>
