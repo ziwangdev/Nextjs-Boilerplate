@@ -9,7 +9,7 @@ export default function SettingsPage() {
 
     return (
         <div className="flex flex-col w-6/12 items-center my-5">
-            <div>Settings</div>
+            <div>Tab2</div>
         </div>
     )
 }

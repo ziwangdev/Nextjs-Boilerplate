@@ -1,24 +1,38 @@
 'use client'
 
+// client side data fetching
+// https://nextjs.org/docs/pages/building-your-application/data-fetching/client-side
+
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-type NavBarProps = {
-    userEmail: string
-    onSignOut: () => Promise<void>
-}
-
-const NavBar: React.FC<NavBarProps> = ({ userEmail, onSignOut }) => {
+export default function NavBar() {
     const router = useRouter()
-    console.log(userEmail)
+    const [email, setEmail] = useState('')
 
     // Create a Supabase client configured to use cookies
     const supabase = createClientComponentClient()
 
     const signOut = async () => {
         await supabase.auth.signOut()
-        onSignOut()
+        setEmail('')
     }
+
+    const getUser = async () => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+            console.log(user.email)
+            setEmail(user?.email as string)
+        }
+    }
+
+    useEffect(() => {
+        // Get user profile
+        getUser()
+    }, [])
 
     return (
         <div className="navbar w-full flex flex-row justify-center items-center">
@@ -26,7 +40,7 @@ const NavBar: React.FC<NavBarProps> = ({ userEmail, onSignOut }) => {
                 <button
                     className="btn btn-ghost"
                     onClick={() => {
-                        router.push('/todo')
+                        router.push('/entities')
                     }}
                 >
                     Todo
@@ -34,7 +48,7 @@ const NavBar: React.FC<NavBarProps> = ({ userEmail, onSignOut }) => {
                 <button
                     className="btn btn-ghost"
                     onClick={() => {
-                        router.push('/settings')
+                        router.push('/tab2')
                     }}
                 >
                     Settings
@@ -42,19 +56,17 @@ const NavBar: React.FC<NavBarProps> = ({ userEmail, onSignOut }) => {
                 <button
                     className="btn btn-ghost"
                     onClick={() => {
-                        if (userEmail !== '') {
+                        if (email !== '') {
                             signOut()
                         } else {
-                            router.push('/login')
+                            router.push('/tab3')
                         }
                     }}
                 >
-                    {userEmail !== '' ? 'Sign out' : 'Login'}
+                    {email !== '' ? 'Sign out' : 'Login'}
                 </button>
             </div>
-            <div>{userEmail !== '' ? <div>Hey,{userEmail}!</div> : null}</div>
+            <div>{email !== '' ? <div>Hey,{email}!</div> : null}</div>
         </div>
     )
 }
-
-export default NavBar
